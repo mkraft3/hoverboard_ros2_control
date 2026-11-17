@@ -161,13 +161,14 @@ namespace hoverboard_hardware_interface
     {
         serialPortService.read();
 
-        double lastPosition = leftWheel.position;
-        leftWheel.position = leftWheel.calculateEncoderAngle();
-        leftWheel.velocity = (leftWheel.position - lastPosition) / period.seconds();
+        const double dt = period.seconds();
+        const double RPM_TO_RAD_S = 0.10472;   // 2*pi/60
 
-        lastPosition = rightWheel.position;
-        rightWheel.position = rightWheel.calculateEncoderAngle();
-        rightWheel.velocity = (rightWheel.position - lastPosition) / period.seconds();
+        leftWheel.velocity  = leftRpm  * RPM_TO_RAD_S;
+        rightWheel.velocity = rightRpm * RPM_TO_RAD_S;
+
+        leftWheel.position  += leftWheel.velocity  * dt;
+        rightWheel.position += rightWheel.velocity * dt;
 
         return hardware_interface::return_type::OK;
     }
@@ -184,17 +185,30 @@ namespace hoverboard_hardware_interface
         motorWheelDriveControl.steer = (int16_t) (steer);
         motorWheelDriveControl.checksum = (uint16_t)(motorWheelDriveControl.head ^ motorWheelDriveControl.steer ^ motorWheelDriveControl.speed);
 
-         RCLCPP_INFO(rclcpp::get_logger("SerialPortService"), "%i %i", motorWheelDriveControl.speed, motorWheelDriveControl.steer);
+         RCLCPP_DEBUG(rclcpp::get_logger("SerialPortService"), "%i %i", motorWheelDriveControl.speed, motorWheelDriveControl.steer);
 
         serialPortService.write((const char*) &motorWheelDriveControl, sizeof(MotorWheelDriveControl));
 
         return hardware_interface::return_type::OK;
     }
 
-    void HoverboardHardwareInterface::motorWheelFeedbackCallback(MotorWheelFeedback motorWheelFeedback) 
+    void HoverboardHardwareInterface::motorWheelFeedbackCallback(MotorWheelFeedback fb)
     {
-        leftWheel.updateEncoderTicks(motorWheelFeedback.leftMotorEncoderCumulativeCount);
-        rightWheel.updateEncoderTicks(motorWheelFeedback.rightMotorEncoderCumulativeCount);
+        const uint16_t cs = (uint16_t)(fb.head ^ fb.cmd1 ^ fb.cmd2 ^ fb.speedR_meas ^
+                                       fb.speedL_meas ^ fb.batVoltage ^ fb.boardTemp ^ fb.cmdLed);
+
+        static int dbg = 0;
+        if (++dbg % 50 == 0) {
+            RCLCPP_INFO(rclcpp::get_logger("HoverboardFB"),
+                "L=%d R=%d bat=%d temp=%d cs_ok=%d size=%zu",
+                fb.speedL_meas, fb.speedR_meas, fb.batVoltage, fb.boardTemp,
+                cs == fb.checksum, sizeof(MotorWheelFeedback));
+        }
+
+        if (cs != fb.checksum) return;
+
+        leftRpm  =  fb.speedL_meas;
+        rightRpm = -fb.speedR_meas;
     }
 }
 

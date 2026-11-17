@@ -25,17 +25,15 @@
 //     LOCK_SHAFT = 0b10,
 // };
 
-typedef struct {
-    uint16_t head;
-    int16_t  command1;
-    int16_t  command2;
-    int16_t  rightMotorSpeed;
-    int16_t  leftMotorSpeed;
-    int16_t  rightMotorEncoderCumulativeCount;
-    int16_t  leftMotorEncoderCumulativeCount;
-    int16_t  batteryVoltage;
-    int16_t  boardTemperature;
-    uint16_t commandLed;
+typedef struct __attribute__((packed)) {
+    uint16_t head;          // 0xABCD
+    int16_t  cmd1;
+    int16_t  cmd2;
+    int16_t  speedR_meas;   // RPM rechts
+    int16_t  speedL_meas;   // RPM links
+    int16_t  batVoltage;    // V * 100
+    int16_t  boardTemp;     // °C * 10
+    uint16_t cmdLed;
     uint16_t checksum;
 } MotorWheelFeedback;
 
