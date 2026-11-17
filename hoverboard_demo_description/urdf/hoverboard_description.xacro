@@ -13,10 +13,13 @@
 
     <xacro:property name="chassis_weight" value="1.0" />
 
+    <xacro:property name="wheel_separation" value="0.63" />  <!-- ANPASSEN: nachmessen, Radmitte zu Radmitte -->
+
     <xacro:property name="driving_wheel_diameter" value="0.250" />
     <xacro:property name="driving_wheel_thickness" value="0.045" />
     <xacro:property name="driving_wheel_weight" value="2.2" />
     <xacro:property name="driving_wheel_base_gap" value="0.01" />
+    <xacro:property name="caster_offset" value="0.78" />  <!-- ANPASSEN: base_link bis Caster-Mitte, in x -->
 
     <xacro:property name="caster_wheel_diameter" value="0.2" />
     <xacro:property name="caster_wheel_weight" value="0.1" />
@@ -38,7 +41,7 @@
                 <box size="${plate_length} ${plate_width} ${plate_height}"/>
             </geometry>
         </collision>
-        <xacro:box_inertia m="${plate_weight}" x="${plate_length}" y="${plate_width}" z="${plate_height}"/>
+        <xacro:box_inertia m="${plate_weight}" w="${plate_width}" h="${plate_height}" d="${plate_length}"/>
     </link>
 
     <joint name="base_link_plate_joint" type="fixed">
